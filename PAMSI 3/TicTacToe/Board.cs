@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 
 namespace PAMSI_3.TicTacToe;
 
@@ -9,7 +8,18 @@ public class Board
     private readonly int _size;
     private readonly int _streakToWin;
 
-    public bool AreAllTilesTaken => _tiles.Cast<Tile>().All(tile => tile != Tile.Empty);
+    public bool AreAllTilesTaken
+    {
+        get
+        {
+            foreach (var tile in _tiles)
+            {
+                if (tile == Tile.Empty) return false;
+            }
+
+            return true;
+        }
+    }
 
     public Tile this[int column, int row]
     {
@@ -44,7 +54,7 @@ public class Board
 
         return Winner.None;
     }
-    
+
     private Winner Horizontal()
     {
         for (var row = 0; row < _size; row++)

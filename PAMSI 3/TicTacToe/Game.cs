@@ -1,81 +1,78 @@
-﻿using System.Diagnostics;
+﻿using System;
 using System.Windows;
 using System.Windows.Controls;
-using Dumpify;
 
 namespace PAMSI_3.TicTacToe;
 
 public class Game
 {
-    private char _playerSymbol;
-    private Tile _last = Tile.Player;
-
     public ContentControl[,] Buttons = default!;
 
     private readonly Board _board;
+    private readonly string _opponentSymbol;
+    private readonly string _playerSymbol;
+    private bool _isGameOver;
 
-    public Game(int size, int streakToWin, char playerSymbol)
+    public Game(int size, int streakToWin, string playerSymbol, string opponentSymbol)
     {
         _board = new Board(size, streakToWin);
         _playerSymbol = playerSymbol;
+        _opponentSymbol = opponentSymbol;
     }
 
     public void Click(int column, int row)
     {
-        if (_board[column, row] != Tile.Empty) return;
-        Buttons[column, row].Content = "X";
-        _board[column, row] = Tile.Player;
-        
-        var winner = _board.CheckWinner();
-        if (winner != Winner.None)
+        if (_board[column, row] != Tile.Empty || _isGameOver) return;
+
+        if (PlayerMove(column, row))
         {
-            MessageBox.Show($"{winner} has won", "Game Over", MessageBoxButton.OK, MessageBoxImage.Information);
+            ShowMessageBox("Player has won");
+            _isGameOver = true;
             return;
         }
 
-        var (c, r) = MakeMoveWithMinimax(Tile.Player);
+        if (CheckTie()) return;
 
-        if (c != -1 && r != -1)
+        if (OpponentMove())
         {
-            Buttons[c, r].Content = "O";
-            _board[c, r] = Tile.Opponent;
+            ShowMessageBox("Opponent has won");
+            _isGameOver = true;
+            return;
         }
-        
-        winner = _board.CheckWinner();
-        if (winner != Winner.None)
-        {
-            MessageBox.Show($"Player {winner} has won", "Game Over", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-        
+
+        CheckTie();
     }
-    
-    public (int column, int row) MakeMoveWithMinimax(Tile currentPlayer)
+
+    private bool PlayerMove(int column, int row)
     {
-        var bestScore = int.MinValue;
-        var bestMoveColumn = -1;
-        var bestMoveRow = -1;
+        Buttons[column, row].Content = _playerSymbol;
+        _board[column, row] = Tile.Player;
 
-        for (var column = 0; column < _board.Size; column++)
-        {
-            for (var row = 0; row < _board.Size; row++)
-            {
-                if (_board[column, row] != Tile.Empty) continue;
-                
-                _board[column, row] = currentPlayer;
+        return _board.CheckWinner() == Winner.Player;
+    }
 
-                var score = MinMax.GetScore(_board, MinMax.GetOpponent(currentPlayer), 0);
+    private bool OpponentMove()
+    {
+        var (column, row) = MinMax.FindBestMove(_board);
 
-                _board[column, row] = Tile.Empty;
+        if (column == -1 || row == -1) throw new Exception();
 
-                if (score > bestScore)
-                {
-                    bestScore = score;
-                    bestMoveColumn = column;
-                    bestMoveRow = row;
-                }
-            }
-        }
+        Buttons[column, row].Content = _opponentSymbol;
+        _board[column, row] = Tile.Opponent;
 
-        return (bestMoveColumn, bestMoveRow);
+        return _board.CheckWinner() == Winner.Opponent;
+    }
+
+    private bool CheckTie()
+    {
+        if (!_board.AreAllTilesTaken) return false;
+
+        ShowMessageBox("Tie");
+        return true;
+    }
+
+    private void ShowMessageBox(string message)
+    {
+        MessageBox.Show(message, "Game Over", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 }

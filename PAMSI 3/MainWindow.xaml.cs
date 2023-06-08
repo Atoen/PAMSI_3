@@ -1,15 +1,13 @@
-﻿using System;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using PAMSI_3.TicTacToe;
 
 namespace PAMSI_3;
 
-public partial class MainWindow : Window
+public partial class MainWindow
 {
     private readonly Regex _regex = NumericRegex();
 
@@ -57,7 +55,10 @@ public partial class MainWindow : Window
         var columns = int.Parse(GridWidthTextBox.Text);
         var winningStreak = int.Parse(WinConditionTextBox.Text);
 
-        var game = new Game(columns, winningStreak, ((string) SymbolSelectButton.Content)[0]);
+        var playerSymbol = (string) SymbolSelectButton.Content;
+        var opponentSymbol = playerSymbol == "X" ? "O" : "X";
+
+        var game = new Game(columns, winningStreak, playerSymbol, opponentSymbol);
 
         var buttons = CreateGrid(columns, game);
         game.Buttons = buttons;
@@ -72,7 +73,6 @@ public partial class MainWindow : Window
         {
             GameGrid.ColumnDefinitions.Add(new ColumnDefinition());
             GameGrid.RowDefinitions.Add(new RowDefinition());
-
         }
 
         var buttons = new ContentControl[size, size];
