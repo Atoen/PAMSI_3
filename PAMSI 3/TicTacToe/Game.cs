@@ -33,12 +33,12 @@ public class Game
 
         if (CheckTie()) return;
 
-        if (OpponentMove())
-        {
-            ShowMessageBox("Opponent has won");
-            _isGameOver = true;
-            return;
-        }
+        // if (OpponentMove())
+        // {
+        //     ShowMessageBox("Opponent has won");
+        //     _isGameOver = true;
+        //     return;
+        // }
 
         CheckTie();
     }

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace PAMSI_3.TicTacToe;
+﻿namespace PAMSI_3.TicTacToe;
 
 public class Board
 {
@@ -16,11 +14,11 @@ public class Board
             {
                 if (tile == Tile.Empty) return false;
             }
-
+    
             return true;
         }
     }
-
+    
     public Tile this[int column, int row]
     {
         get => _tiles[column, row];
@@ -38,122 +36,63 @@ public class Board
 
     public Winner CheckWinner()
     {
-        if (_size < _streakToWin) return Winner.None;
 
-        var horizontal = Horizontal();
-        if (horizontal != Winner.None) return horizontal;
-
-        var vertical = Vertical();
-        if (vertical != Winner.None) return vertical;
-
-        var diagonal = Diagonal(DiagonalDirection.Up);
-        if (diagonal != Winner.None) return diagonal;
-
-        diagonal = Diagonal(DiagonalDirection.Down);
-        if (diagonal != Winner.None) return diagonal;
-
-        return Winner.None;
-    }
-
-    private Winner Horizontal()
-    {
         for (var row = 0; row < _size; row++)
         {
-            var streakStartState = Tile.Empty;
-            var streak = 1;
-
-            for (var column = 0; column < _size; column++)
+            for (var column = 0; column <= _size - _streakToWin; column++)
             {
-                var tileState = _tiles[column, row];
-                if (tileState == Tile.Empty) continue;
-
-                if (tileState == streakStartState)
-                {
-                    streak++;
-
-                    if (streak >= _streakToWin) return (Winner) tileState;
-                }
-                else
-                {
-                    streakStartState = tileState;
-                    streak = 1;
-                }
+                var winner = GetStreakWinner(column, row, 1, 0);
+                if (winner != Winner.None) return winner;
             }
         }
-
-        return Winner.None;
-    }
-
-    private Winner Vertical()
-    {
+        
         for (var column = 0; column < _size; column++)
         {
-            var streakStartState = Tile.Empty;
-            var streak = 1;
-
-            for (var row = 0; row < _size; row++)
+            for (var row = 0; row <= _size - _streakToWin; row++)
             {
-                var tileState = _tiles[column, row];
-                if (tileState == Tile.Empty) continue;
-
-                if (tileState == streakStartState)
-                {
-                    streak++;
-                    if (streak >= _streakToWin) return (Winner) tileState;
-                }
-                else
-                {
-                    streakStartState = tileState;
-                    streak = 1;
-                }
+                var winner = GetStreakWinner(column, row, 0, 1);
+                if (winner != Winner.None) return winner;
             }
+        }
+        
+        for (var column = 0; column <= _size - _streakToWin; column++)
+        {
+            for (var row = 0; row <= _size - _streakToWin; row++)
+            {
+                // Main diagonal
+                var diagonalWinner = GetStreakWinner(column, row, 1, 1);
+                if (diagonalWinner != Winner.None) return diagonalWinner;
+
+                // Anti-diagonal
+                var antiDiagonalWinner = GetStreakWinner(column + _streakToWin - 1, row, -1, 1);
+                if (antiDiagonalWinner != Winner.None) return antiDiagonalWinner;
+            }
+
         }
 
         return Winner.None;
     }
 
-    private Winner Diagonal(DiagonalDirection direction)
+    private Winner GetStreakWinner(int startColumn, int startRow, int columnStep, int rowStep)
     {
-        var maxOffset = _size - _streakToWin;
+        var streakStartState = _tiles[startColumn, startRow];
+        var streak = 1;
 
-        for (var columnOffset = 0; columnOffset <= maxOffset; columnOffset++)
-        for (var rowOffset = 0; rowOffset <= maxOffset; rowOffset++)
+        for (var i = 0; i < _streakToWin; i++)
         {
-            if (columnOffset != 0 && rowOffset != 0) continue;
+            var column = startColumn + i * columnStep;
+            var row = startRow + i * rowStep;
+            var tileState = _tiles[column, row];
 
-            var diagonalLength = _size - Math.Max(columnOffset, rowOffset);
-            var streakStartState = Tile.Empty;
-            var streak = 1;
-
-            for (var pos = 0; pos < diagonalLength; pos++)
+            if (tileState == Tile.Empty || tileState != streakStartState)
             {
-                Tile tileState;
-                if (direction == DiagonalDirection.Up)
-                {
-                    var row = _size - pos - 1;
-                    tileState = _tiles[pos + columnOffset, row - rowOffset];
-                }
-                else
-                {
-                    tileState = _tiles[pos + columnOffset, pos + rowOffset];
-                }
-
-                if (tileState == Tile.Empty) continue;
-
-                if (tileState == streakStartState)
-                {
-                    streak++;
-                    if (streak >= _streakToWin) return (Winner) streakStartState;
-                }
-                else
-                {
-                    streakStartState = tileState;
-                    streak = 1;
-                }
+                return Winner.None;
             }
+
+            streak++;
         }
 
-        return Winner.None;
+        return (Winner) streakStartState;
     }
 }
 
