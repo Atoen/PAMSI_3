@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -6,46 +7,57 @@ namespace PAMSI_3.TicTacToe;
 
 public class Game
 {
-    public ContentControl[,] Buttons = default!;
-
     private readonly Board _board;
     private readonly string _opponentSymbol;
     private readonly string _playerSymbol;
     private bool _isGameOver;
+    private readonly ContentControl[,] _buttons;
+    private bool _movingNow;
 
     public Game(int size, int streakToWin, string playerSymbol, string opponentSymbol)
     {
         _board = new Board(size, streakToWin);
         _playerSymbol = playerSymbol;
         _opponentSymbol = opponentSymbol;
+        _buttons = new ContentControl[size, size];
     }
 
-    public void Click(int column, int row)
+    public void AddButton(Button button, int column, int row) => _buttons[column, row] = button;
+
+    public async void Click(int column, int row)
     {
-        if (_board[column, row] != Tile.Empty || _isGameOver) return;
+        if (_board[column, row] != Tile.Empty || _isGameOver || _movingNow) return;
 
-        if (PlayerMove(column, row))
+        _movingNow = true;
+
+        await Task.Run(() =>
         {
-            ShowMessageBox("Player has won");
-            _isGameOver = true;
-            return;
-        }
+            if (PlayerMove(column, row))
+            {
+                ShowMessageBox("Player has won");
+                _isGameOver = true;
+                return;
+            }
 
-        if (CheckTie()) return;
+            if (CheckTie()) return;
 
-        // if (OpponentMove())
-        // {
-        //     ShowMessageBox("Opponent has won");
-        //     _isGameOver = true;
-        //     return;
-        // }
+            if (OpponentMove())
+            {
+                ShowMessageBox("Opponent has won");
+                _isGameOver = true;
+                return;
+            }
 
-        CheckTie();
+            CheckTie();
+        });
+
+        _movingNow = false;
     }
 
     private bool PlayerMove(int column, int row)
     {
-        Buttons[column, row].Content = _playerSymbol;
+        var button = _buttons[column, row];
+        button.Dispatcher.Invoke(() => button.Content = _playerSymbol);
         _board[column, row] = Tile.Player;
 
         return _board.CheckWinner() == Winner.Player;
@@ -57,7 +69,9 @@ public class Game
 
         if (column == -1 || row == -1) throw new Exception();
 
-        Buttons[column, row].Content = _opponentSymbol;
+        var button = _buttons[column, row];
+        button.Dispatcher.Invoke(() => button.Content = _opponentSymbol);
+
         _board[column, row] = Tile.Opponent;
 
         return _board.CheckWinner() == Winner.Opponent;

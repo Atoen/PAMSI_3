@@ -47,24 +47,20 @@ public partial class MainWindow
         else if (textBox.Text.Length > 1) textBox.Text = textBox.Text[^1].ToString();
     }
 
-    [GeneratedRegex("[^2-9]+")]
-    private static partial Regex NumericRegex();
-
     private void PLayButton_OnClick(object sender, RoutedEventArgs e)
     {
-        var columns = int.Parse(GridWidthTextBox.Text);
+        var size = int.Parse(GridWidthTextBox.Text);
         var winningStreak = int.Parse(WinConditionTextBox.Text);
 
         var playerSymbol = (string) SymbolSelectButton.Content;
         var opponentSymbol = playerSymbol == "X" ? "O" : "X";
 
-        var game = new Game(columns, winningStreak, playerSymbol, opponentSymbol);
+        var game = new Game(size, winningStreak, playerSymbol, opponentSymbol);
 
-        var buttons = CreateGrid(columns, game);
-        game.Buttons = buttons;
+        CreateGrid(size, game);
     }
 
-    private ContentControl[,] CreateGrid(int size, Game game)
+    private void CreateGrid(int size, Game game)
     {
         GameGrid.ColumnDefinitions.Clear();
         GameGrid.RowDefinitions.Clear();
@@ -91,6 +87,7 @@ public partial class MainWindow
             var col1 = col;
             var row1 = row;
             cellButton.Click += (_, _) => game.Click(col1, row1);
+            game.AddButton(cellButton, col, row);
 
             var cellBorder = new Border
             {
@@ -103,7 +100,8 @@ public partial class MainWindow
             Grid.SetRow(cellBorder, row);
             Grid.SetColumn(cellBorder, col);
         }
-
-        return buttons;
     }
+
+    [GeneratedRegex("[^2-9]+")]
+    private static partial Regex NumericRegex();
 }

@@ -9,7 +9,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Dumpify" Version="0.5.4" />
+      <Content Include="obj\PAMSI 3.csproj.nuget.dgspec.json" />
+      <Content Include="obj\PAMSI 3_xkitliva_wpftmp.csproj.nuget.dgspec.json" />
+      <Content Include="obj\PAMSI 3_xkitliva_wpftmp.csproj.nuget.g.props" />
+      <Content Include="obj\PAMSI 3_xkitliva_wpftmp.csproj.nuget.g.targets" />
+      <Content Include="obj\project.assets.json" />
+      <Content Include="obj\project.nuget.cache" />
+      <Content Include="obj\project.packagespec.json" />
+      <Content Include="obj\rider.project.restore.info" />
     </ItemGroup>
 
 </Project>

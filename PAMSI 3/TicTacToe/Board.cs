@@ -1,11 +1,18 @@
-﻿namespace PAMSI_3.TicTacToe;
+﻿using System;
+
+namespace PAMSI_3.TicTacToe;
 
 public class Board
 {
     private readonly Tile[,] _tiles;
-    private readonly int _size;
-    private readonly int _streakToWin;
 
+    public Board(int size, int streakToWin)
+    {
+        Size = size;
+        StreakToWin = streakToWin;
+        _tiles = new Tile[size, size];
+    }
+    
     public bool AreAllTilesTaken
     {
         get
@@ -14,85 +21,175 @@ public class Board
             {
                 if (tile == Tile.Empty) return false;
             }
-    
+
             return true;
         }
     }
-    
+
     public Tile this[int column, int row]
     {
         get => _tiles[column, row];
         set => _tiles[column, row] = value;
     }
 
-    public int Size => _size;
-
-    public Board(int size, int streakToWin)
-    {
-        _size = size;
-        _tiles = new Tile[size, size];
-        _streakToWin = streakToWin;
-    }
+    public int Size { get; }
+    public int StreakToWin { get; }
 
     public Winner CheckWinner()
     {
+        if (Size < StreakToWin) return Winner.None;
 
-        for (var row = 0; row < _size; row++)
-        {
-            for (var column = 0; column <= _size - _streakToWin; column++)
-            {
-                var winner = GetStreakWinner(column, row, 1, 0);
-                if (winner != Winner.None) return winner;
-            }
-        }
-        
-        for (var column = 0; column < _size; column++)
-        {
-            for (var row = 0; row <= _size - _streakToWin; row++)
-            {
-                var winner = GetStreakWinner(column, row, 0, 1);
-                if (winner != Winner.None) return winner;
-            }
-        }
-        
-        for (var column = 0; column <= _size - _streakToWin; column++)
-        {
-            for (var row = 0; row <= _size - _streakToWin; row++)
-            {
-                // Main diagonal
-                var diagonalWinner = GetStreakWinner(column, row, 1, 1);
-                if (diagonalWinner != Winner.None) return diagonalWinner;
+        var horizontal = Horizontal();
+        if (horizontal != Winner.None) return horizontal;
 
-                // Anti-diagonal
-                var antiDiagonalWinner = GetStreakWinner(column + _streakToWin - 1, row, -1, 1);
-                if (antiDiagonalWinner != Winner.None) return antiDiagonalWinner;
-            }
+        var vertical = Vertical();
+        if (vertical != Winner.None) return vertical;
 
+        var diagonal = Diagonal(DiagonalDirection.Up);
+        if (diagonal != Winner.None) return diagonal;
+
+        diagonal = Diagonal(DiagonalDirection.Down);
+        if (diagonal != Winner.None) return diagonal;
+
+        return Winner.None;
+    }
+
+    private Winner Horizontal()
+    {
+        for (var row = 0; row < Size; row++)
+        {
+            var streakStartState = Tile.Empty;
+            var streak = 1;
+
+            for (var column = 0; column < Size; column++)
+            {
+                var tileState = _tiles[column, row];
+
+                if (tileState != Tile.Empty && tileState == streakStartState)
+                {
+                    streak++;
+
+                    if (streak >= StreakToWin) return (Winner) tileState;
+                }
+                else
+                {
+                    streakStartState = tileState;
+                    streak = 1;
+                }
+            }
         }
 
         return Winner.None;
     }
 
-    private Winner GetStreakWinner(int startColumn, int startRow, int columnStep, int rowStep)
+    private Winner Vertical()
     {
-        var streakStartState = _tiles[startColumn, startRow];
-        var streak = 1;
-
-        for (var i = 0; i < _streakToWin; i++)
+        for (var column = 0; column < Size; column++)
         {
-            var column = startColumn + i * columnStep;
-            var row = startRow + i * rowStep;
-            var tileState = _tiles[column, row];
+            var streakStartState = Tile.Empty;
+            var streak = 1;
 
-            if (tileState == Tile.Empty || tileState != streakStartState)
+            for (var row = 0; row < Size; row++)
             {
-                return Winner.None;
-            }
+                var tileState = _tiles[column, row];
 
-            streak++;
+                if (tileState != Tile.Empty && tileState == streakStartState)
+                {
+                    streak++;
+                    if (streak >= StreakToWin) return (Winner) tileState;
+                }
+                else
+                {
+                    streakStartState = tileState;
+                    streak = 1;
+                }
+            }
         }
 
-        return (Winner) streakStartState;
+        return Winner.None;
+    }
+
+    private Winner Diagonal(DiagonalDirection direction)
+    {
+        var maxOffset = Size - StreakToWin;
+
+        for (var columnOffset = 0; columnOffset <= maxOffset; columnOffset++)
+        for (var rowOffset = 0; rowOffset <= maxOffset; rowOffset++)
+        {
+            if (columnOffset != 0 && rowOffset != 0) continue;
+
+            var diagonalLength = Size - Math.Max(columnOffset, rowOffset);
+            var streakStartState = Tile.Empty;
+            var streak = 1;
+
+            for (var pos = 0; pos < diagonalLength; pos++)
+            {
+                Tile tileState;
+                if (direction == DiagonalDirection.Up)
+                {
+                    var row = Size - pos - 1;
+                    tileState = _tiles[pos + columnOffset, row - rowOffset];
+                }
+                else
+                {
+                    tileState = _tiles[pos + columnOffset, pos + rowOffset];
+                }
+
+                if (tileState != Tile.Empty && tileState == streakStartState)
+                {
+                    streak++;
+                    if (streak >= StreakToWin) return (Winner) streakStartState;
+                }
+                else
+                {
+                    streakStartState = tileState;
+                    streak = 1;
+                }
+            }
+        }
+
+        return Winner.None;
+    }
+
+    public long HashCode
+    {
+        get
+        {
+            unchecked
+            {
+                long hash = 17;
+
+                foreach (var tile in _tiles)
+                {
+                    hash = hash * 23 + tile.GetHashCode();
+                }
+
+                return hash;
+            }
+        }
+    }
+
+    public override bool Equals(object? obj)
+    {
+        if (obj is not Board otherBoard) return false;
+
+        if (otherBoard.Size != Size) return false;
+
+        for (var i = 0; i < Size; i++)
+        for (var j = 0; j < Size; j++)
+        {
+            if (_tiles[i, j] != otherBoard[i, j])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public override int GetHashCode()
+    {
+        return System.HashCode.Combine(_tiles, Size, StreakToWin);
     }
 }
 
